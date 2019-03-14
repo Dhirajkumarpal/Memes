@@ -1,0 +1,189 @@
+------------------------------shop.php-------------------------------------------------------------------------
+
+<?php
+session_start();
+if (!isset($_SESSION['count'])) {
+	$_SESSION['count']=0;
+$_SESSION['result']=array();
+$_SESSION['n1']=array();
+$_SESSION['n2']=array();
+$_SESSION['operator']=array();
+}
+?>
+
+	<button value="clear" id="clear">C</button>
+
+	<?php
+echo "inside";
+echo $_SESSION['count'];
+		for($i=0;$i<$_SESSION['count'];$i++){
+			echo "yo \n";
+			echo "number 1: ".$_SESSION['n1'][$i]." operation: ".$_SESSION['operator'][$i]." number 2:".$_SESSION['n2'][$i]." result: ".$_SESSION['result'][$i];
+		}
+		if(isset($_POST['calculate'])){
+			echo "in";
+			$n1=$_POST['n1'];
+			$n2=$_POST['n2'];
+			$result=0;
+			$operator=$_POST['operator'];
+			switch ($operator) {
+				case '+':
+					$result=$n1+$n2;
+					$_SESSION['n1'][$_SESSION['count']]=$n1;
+					$_SESSION['n2'][$_SESSION['count']]=$n2;
+					$_SESSION['operator'][$_SESSION['count']]=$operator;
+					$_SESSION['result'][$_SESSION['count']]=$result;
+					echo $_SESSION['n1'][$_SESSION['count']];
+					$_SESSION['count']++;
+					break;
+				case '-':
+					$result=$n1-$n2;
+					$_SESSION['n1'][$_SESSION['count']]=$n1;
+					$_SESSION['n2'][$_SESSION['count']]=$n2;
+					$_SESSION['operator'][$_SESSION['count']]=$operator;
+					$_SESSION['result'][$_SESSION['count']]=$result;
+					$_SESSION['count']++;
+					break;
+				case '*':
+					$result=$n1*$n2;
+					$_SESSION['n1'][$_SESSION['count']]=$n1;
+					$_SESSION['n2'][$_SESSION['count']]=$n2;
+					$_SESSION['operator'][$_SESSION['count']]=$operator;
+					$_SESSION['result'][$_SESSION['count']]=$result;
+					$_SESSION['count']++;
+					break;
+				case '/':
+					if($n2==0){
+						echo '<script>alert("divisor cannot be zero");</script>';
+						//header("location:calculator.php");
+					}
+					else{
+						$result=$n1/$n2;
+						$_SESSION['n1'][$_SESSION['count']]=$n1;
+						$_SESSION['n2'][$_SESSION['count']]=$n2;
+						$_SESSION['operator'][$_SESSION['count']]=$operator;
+						$_SESSION['result'][$_SESSION['count']]=$result;
+						$_SESSION['count']++;
+					}
+					break;
+				default:
+					break;
+			}
+			echo $result;
+			//header("location:calculator.php");
+		}
+	?>
+</body>
+
+<script type="text/javascript">
+	document.getElementById("clear").addEventListener("click",function(){
+		// alert("clicked");
+		var numbers=document.getElementsByTagName("input");
+		for(var i=0;i<numbers.length;i++){
+			numbers[i].value="";
+		}
+		var selectyo=document.getElementsByTagName("select");
+		selectyo[0].options[0].selected=true;
+	})
+</script>
+</html>
+
+
+
+--------------------------------------------see cart.php------------------------------------
+
+
+<?php session_start(); ob_start(); $conn=mysqli_connect('localhost', 'root', "", "wtPrac"); ?>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Shop with us!</title>
+	<link rel="stylesheet" type="text/css" href="bootstrap.css">
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script type="text/javascript">
+		function removeItem(id)
+		{
+			$.ajax({
+				url: "removeItem.php",
+				method: "POST",
+				data: {"id" : id},
+				success: function(result)
+				{
+					alert('Item removed!');
+					$('#result').html(result);
+				}
+			});
+		}
+	</script>
+</head>
+<body>
+	<div class="header">
+		<h2 class="jumbotron">ANT Website</h2>
+	</div>
+	<div class="navbar" style="background-color: grey;">
+		<a href="gallery.php" style="color: white; text-align: center;">Gallery</a>
+		<a href="calculator.php" style="color: white; text-align: center;">Calculator</a>
+		<a href="search.php" style="color: white; text-align: center;">Search</a>
+		<a href="shop.php" style="color: white;">Shopping</a>
+		<?php if(isset($_SESSION['name']))
+				{
+					echo "<a href='logout.php' style='color: white; text-align: center;'>Logout</a>";
+				}
+		?>
+		<a href="seeCart.php" id="result" style="float: right; color: white;"></a>
+	</div>
+	<div class="container-fluid">
+		<?php
+			$sql = "SELECT * FROM shop WHERE itemId IN (SELECT itemId FROM cart)";
+			$result = mysqli_query($conn, $sql);
+			if(mysqli_num_rows($result) > 0)
+			{
+				echo '<div class="row">';
+				while($row = mysqli_fetch_assoc($result))
+				{
+					echo '<div class="col-md-4 col-xs-6">';
+						echo '<img src='.$row['itemPhoto'].' class="img-thumbnail img-fluid">';
+						echo '<h3>'.$row['itemName'].'</h3>';
+						echo '<h4>'.$row['itemPrice'].'</h4>';
+echo '<button name="book" id='.$row['itemId'].' onclick="removeItem('.$row["itemId"].')">Remove</button>';
+					echo "</div>";
+				}
+				echo "</div>";
+			}
+		?>
+	</div>
+</body>
+</html>
+
+
+-------------------------------------------remove items.php--------------------------
+
+<?php
+	session_start();
+	ob_start();
+	$conn = mysqli_connect("localhost", "root", "", "wtPrac");
+	$id = $_POST['id'];
+	$sql = "DELETE FROM cart WHERE itemId = $id";
+	$result = mysqli_query($conn, $sql);
+	if($result)
+		echo "Item Deleted!";
+?>
+
+
+------------------------------------add items.php--------------------------------------------------------------
+
+
+
+<?php
+session_start(); ob_start();
+	$conn = mysqli_connect("localhost", "root", "", "wtPrac");
+	$itemId = $_POST['id'];
+	$sql = "INSERT INTO cart(itemId) VALUES ('$itemId')";
+	$result = mysqli_query($conn, $sql);
+	if($result)
+	{
+		@$_SESSION['cartCount']++;
+		echo "Cart count = ".$_SESSION['cartCount'];
+	}
+?>
